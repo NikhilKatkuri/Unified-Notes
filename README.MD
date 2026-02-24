@@ -17,6 +17,17 @@ It is designed to simulate real-world sync architecture where data consistency, 
 
 ...
 
+## File Structure
+
+```
+├── app
+│   ├── client
+│   └── server
+├── packages
+├── README.MD
+└── package.json
+```
+
 ## author
 
 Nikhil Katuri
