@@ -2,7 +2,7 @@
  * LoginSession represents the structure of a user's login session, including details about the device used for login, location information, and session management fields.
  */
 
-import { TimeStamp } from "./common";
+import { type TimeStamp } from "./common";
 
 export type DeviceType = "mobile" | "desktop" | "tablet" | "unknown";
 

@@ -1,4 +1,4 @@
-import { TimeStamp } from "./common";
+import { type TimeStamp } from "./common";
 
 /**
  * Verifier represents the structure of a token used for verification purposes, such as password reset or email verification.
