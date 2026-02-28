@@ -8,6 +8,7 @@ export type DeviceType = "mobile" | "desktop" | "tablet" | "unknown";
 
 export interface LoginSession extends TimeStamp {
   _id: string;
+  userId: string;
   sessionId: string;
   ipAddress: string;
   refreshTokenHash: string;

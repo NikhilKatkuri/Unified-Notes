@@ -1,3 +1,5 @@
+import { signin, signup } from "@/controllers/index.js";
+
 import express from "express";
 import { Router } from "express";
 
@@ -11,8 +13,8 @@ authRouter.get(baseName, (_req, res) => {
   });
 });
 
-authRouter.post(appendBaseName("/signin"));
-authRouter.post(appendBaseName("/signup"));
+authRouter.post(appendBaseName("/signin"), signin);
+authRouter.post(appendBaseName("/signup"), signup);
 authRouter.post(appendBaseName("/logout"));
 authRouter.post(appendBaseName("/refresh"));
 authRouter.post(appendBaseName("/reset-request"));
