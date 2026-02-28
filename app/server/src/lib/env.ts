@@ -63,6 +63,9 @@ const ENV = {
   DATABASE_URL: loadEnv("DATABASE_URL"),
   JWT_SECRET: loadEnv("JWT_SECRET"),
   CORS_ORIGINS: parseCommaArray("CORS_ORIGINS"),
+  isProduction:
+    parseEnum("NODE_ENV", ["development", "production", "test"] as const) ===
+    "production",
 };
 
 type Env = typeof ENV;
