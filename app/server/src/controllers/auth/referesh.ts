@@ -1,14 +1,13 @@
 // external imports
 import type { Request, Response } from "express";
 import jwt from "jsonwebtoken";
-import bcrypt from "bcrypt";
-import { randomUUID } from "crypto";
 
 // local imports
 import { asyncHandler } from "@/lib/global.err.js";
 import { ENV } from "@/lib/env.js";
 import UserModel from "@/models/user.js";
 import SessionModel from "@/models/session.js";
+import generateRefreshToken from "@/lib/refreshToken.js";
 
 const refresh = asyncHandler(async (req: Request, res: Response) => {
   const { refreshToken } = req.cookies;
@@ -42,24 +41,28 @@ const refresh = asyncHandler(async (req: Request, res: Response) => {
   const session = await SessionModel.findOne({
     userId: userId,
     sessionId: decoded.sessionId,
+    isActive: true,
   });
 
   if (!session) {
     return res.status(404).json({ message: "Session not found" });
   }
-  const _refreshtoken = randomUUID().toString();
-  const _refreshtokenHash = await bcrypt.hash(_refreshtoken, 10);
 
-  session.refreshTokenHash = _refreshtokenHash;
-  session.refreshExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const _gen_token = generateRefreshToken({
+    userId: decoded.userId,
+    sessionId: decoded.sessionId,
+  });
+
+  session.refreshTokenHash = _gen_token.token;
+  session.refreshExpiresAt = _gen_token.expiresAt;
 
   await session.save();
 
-  res.cookie("refreshToken", _refreshtoken, {
+  res.cookie("refreshToken", _gen_token.token, {
     httpOnly: true,
     secure: ENV.isProduction,
     sameSite: "strict",
-    path: "api/v1/auth/refresh",
+    path: "/api/v1/auth/refresh",
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
 
@@ -67,7 +70,6 @@ const refresh = asyncHandler(async (req: Request, res: Response) => {
     message: "Refresh token is valid",
     userId: decoded.userId,
     sessionId: decoded.sessionId,
-    _refreshtoken,
   });
 });
 

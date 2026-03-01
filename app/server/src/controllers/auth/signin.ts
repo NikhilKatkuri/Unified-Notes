@@ -2,14 +2,15 @@
 import type { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import type { LoginSession, PublicUser } from "@unified-notes/types";
+import { randomUUID } from "node:crypto";
 
 // local imports
 import { asyncHandler } from "@/lib/global.err.js";
 import UserModel from "@/models/user.js";
 import SessionModel from "@/models/session.js";
-import { randomUUID } from "node:crypto";
-import jwt from "jsonwebtoken";
 import { ENV } from "@/lib/env.js";
+import generateRefreshToken from "@/lib/refreshToken.js";
+import generateToken from "@/lib/genJwt.js";
 
 const signin = asyncHandler(async (req: Request, res: Response) => {
   const { email, password, deviceInfo, location } = req.body;
@@ -38,20 +39,17 @@ const signin = asyncHandler(async (req: Request, res: Response) => {
     req.headers["x-forwarded-for"]?.toString() ||
     req.socket.remoteAddress?.toString();
 
-  const _refreshtoken = randomUUID().toString();
-  const _refreshtokenHash = await bcrypt.hash(_refreshtoken, 10);
-
-  const _refreshToken = {
-    tokenHash: _refreshtokenHash,
-    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
-  };
+  const _gen_token = generateRefreshToken({
+    userId: _user._id.toString(),
+    sessionId,
+  });
 
   const _sessionUser: Partial<LoginSession> = {
     userId: _user._id.toString(),
     sessionId,
     ipAddress: ipAddress || "unknown",
-    refreshTokenHash: _refreshtokenHash,
-    refreshExpiresAt: _refreshToken.expiresAt,
+    refreshTokenHash: _gen_token.token,
+    refreshExpiresAt: _gen_token.expiresAt,
     device: (deviceInfo || undefined) as LoginSession["device"],
     location: (location || undefined) as LoginSession["location"],
     isActive: true,
@@ -60,22 +58,16 @@ const signin = asyncHandler(async (req: Request, res: Response) => {
 
   await SessionModel.create(_sessionUser);
 
-  const _token = jwt.sign(
-    {
-      userId: _user._id.toString(),
-      sessionId,
-    },
-    ENV.JWT_SECRET,
-    {
-      expiresIn: "15m",
-    },
-  );
+  const _token = generateToken({
+    userId: _user._id.toString(),
+    expiresIn: "15m",
+  }).token;
 
-  res.cookie("refreshToken", _refreshtoken, {
+  res.cookie("refreshToken", _gen_token.token, {
     httpOnly: true,
     secure: ENV.isProduction,
     sameSite: "strict",
-    path: "api/v1/auth/refresh",
+    path: "/api/v1/auth/refresh",
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
 

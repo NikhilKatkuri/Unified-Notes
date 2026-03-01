@@ -3,13 +3,14 @@ import type { Request, Response } from "express";
 import type { LoginSession, PublicUser } from "@unified-notes/types";
 import bcrypt from "bcrypt";
 import { randomUUID } from "crypto";
-import jwt from "jsonwebtoken";
 
 // local imports
 import UserModel from "@/models/user.js";
 import { asyncHandler } from "@/lib/global.err.js";
 import SessionModel from "@/models/session.js";
 import { ENV } from "@/lib/env.js";
+import generateRefreshToken from "@/lib/refreshToken.js";
+import generateToken from "@/lib/genJwt.js";
 
 const signup = asyncHandler(async (req: Request, res: Response) => {
   const { email, password, name, deviceInfo, location } = req.body;
@@ -43,30 +44,23 @@ const signup = asyncHandler(async (req: Request, res: Response) => {
   };
 
   const sessionId = randomUUID().toString();
+
   const ipAddress =
     req.ip?.toString() ||
     req.headers["x-forwarded-for"]?.toString() ||
     req.socket.remoteAddress?.toString();
 
-  const _refreshToken = jwt.sign(
-    {
-      userId: newUser._id.toString(),
-      sessionId,
-    },
-    ENV.REFRESH_TOKEN_SECRET,
-    {
-      expiresIn: "7d",
-    },
-  );
-
-  const _refreshTokenHash = await bcrypt.hash(_refreshToken, 10);
+  const _gen_token = generateRefreshToken({
+    userId: newUser._id.toString(),
+    sessionId,
+  });
 
   const _sessionUser: Partial<LoginSession> = {
     userId: newUser._id.toString(),
     sessionId,
     ipAddress: ipAddress || "unknown",
-    refreshTokenHash: _refreshTokenHash,
-    refreshExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+    refreshTokenHash: _gen_token.token,
+    refreshExpiresAt: _gen_token.expiresAt,
     device: (deviceInfo || undefined) as LoginSession["device"],
     location: (location || undefined) as LoginSession["location"],
     isActive: true,
@@ -75,24 +69,19 @@ const signup = asyncHandler(async (req: Request, res: Response) => {
 
   await SessionModel.create(_sessionUser);
 
-  const _token = jwt.sign(
-    {
-      userId: newUser._id.toString(),
-      sessionId,
-    },
-    ENV.JWT_SECRET,
-    {
-      expiresIn: "15m",
-    },
-  );
+  const _token = generateToken({
+    userId: newUser._id.toString(),
+    expiresIn: "15m",
+  }).token;
 
-  res.cookie("refreshToken", _refreshToken, {
+  res.cookie("refreshToken", _gen_token.token, {
     httpOnly: true,
     secure: ENV.isProduction,
     sameSite: "strict",
     path: "/api/v1/auth/refresh",
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
+
   res.status(201).json({
     message: "User created successfully",
     user: _publicUser,
