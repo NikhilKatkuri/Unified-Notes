@@ -7,7 +7,6 @@ const userSchema = new mongoose.Schema<UserSnap & mongoose.Document>(
     email: { type: String, required: true, unique: true },
     passwordHash: { type: String, required: true },
     displayPictureUrl: { type: String, default: "" },
-    isEmailVerified: { type: Boolean, default: false },
   },
   {
     timestamps: true,
