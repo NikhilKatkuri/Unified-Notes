@@ -8,6 +8,7 @@ import { ENV } from "@/lib/env.js";
 import limiter from "@/lib/limiter.js";
 import appRouter from "@/router/index.js";
 import globalErrorHandler from "@/lib/global.err.js";
+import cookieParser from "cookie-parser";
 
 const app: express.Application = express();
 
@@ -16,7 +17,7 @@ if (ENV.isProduction) {
 }
 
 app.use(express.json());
-
+app.use(cookieParser());
 app.use(
   express.urlencoded({ extended: true, limit: "10mb", parameterLimit: 1000 }),
 );

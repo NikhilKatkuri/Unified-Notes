@@ -66,6 +66,7 @@ const ENV = {
   isProduction:
     parseEnum("NODE_ENV", ["development", "production", "test"] as const) ===
     "production",
+  REFRESH_TOKEN_SECRET: loadEnv("REFRESH_TOKEN_SECRET"),
 };
 
 type Env = typeof ENV;
