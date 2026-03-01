@@ -1,4 +1,4 @@
-import { signin, signup } from "@/controllers/index.js";
+import { signin, signup, find, account } from "@/controllers/index.js";
 
 import express from "express";
 import { Router } from "express";
@@ -23,8 +23,8 @@ authRouter.post(appendBaseName("/reset-confirm"));
 authRouter.get(appendBaseName("/verify"));
 authRouter.get(appendBaseName("/me"));
 authRouter.get(appendBaseName("/users"));
-authRouter.get(appendBaseName("/find"));
+authRouter.get(appendBaseName("/find"), find);
 
-authRouter.delete(appendBaseName("/account"));
+authRouter.delete(appendBaseName("/account"), account);
 authRouter.put(appendBaseName("/user"));
 export { authRouter };
